@@ -8,13 +8,13 @@ A shark arcade game for mobile and desktop browsers. Eat fish to grow, keep your
 ![Gameplay](screenshot.png)
 
 ## Features
-- **5 zones:** Coral Reef, Shipwreck Graveyard, Arctic Shelf, The Deep, and The Abyss (glowing creatures in the dark)
-- **25 levels** with a different goal in each, a **boss** at the end of every zone (Crab King, Sub, Narwhal, Giant Squid, Angler), and an **Endless** mode for each zone that saves your best score
+- **5 zones:** Coral Reef, Shipwreck Bay, Arctic Ice, Deep Sea and The Abyss (glowing creatures in the dark)
+- **25 levels** with a different goal in each, a **boss** at the end of every zone (King Crab, The Iron Tide submarine, Frost Narwhal, Giant Squid, Abyss Angler), and an **Endless** mode for each zone that saves your best score
 - **Grow by eating:** food chains, combos, Frenzy mode, Gold Rush, chests and coins
 - **6 sharks** to unlock and upgrade: Reef, Hammerhead, Mako, Tiger, Great White, Megalodon
-- **Gadgets:** Jetpack, Laser, Magnet, Armor, Big Belly, Lucky Charm. Each has 5 upgrade levels.
-- **Power-ups:** magnet, shield, jet, laser, mega-size, heal, gold rush
-- **Missions** that pay coins, plus a shop, revives and star ratings
+- **Gadgets:** Jetpack, Laser Visor, Coin Magnet, Armor Plates, Big Belly, Frenzy Charm. Each has 5 upgrade levels.
+- **Power-ups:** Magnet, Bubble Shield, Jet Boost, Laser, Mega Bite, Heal, Gold Rush
+- **Missions** that pay coins, a shop, Lucky Shell revives, Power Pearls and 3-star ratings
 - Graphics are all drawn in code: light rays, caustics, parallax, bubbles, particles, depth fog
 - Music and sound effects are generated in the browser (WebAudio)
 - Progress is saved in your browser (localStorage)
