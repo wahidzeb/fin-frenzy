@@ -2333,10 +2333,11 @@ function render(t) {
   drawLayers(c, makeLayers(w.zi));
   drawRays(c, surf, t, z);
   // marine snow (screen-space drift, varied depth)
-  if (Q.lvl >= 1) {
+  {
     c.fillStyle = z.dark > 0.3 ? 'rgba(180,220,255,.4)' : 'rgba(255,255,255,.35)';
-    for (let i = 0; i < 60; i++) { const d = 0.4 + hash(i + 7) * 0.8, px = ((hash(i) * 2000 - w.cam.x * s * d + Math.sin(t * 0.5 + i) * 10) % VW + VW) % VW, py = ((hash(i + 40) * 2000 - w.cam.y * s * d + t * 10 * d) % VH + VH) % VH; if (py > surf) { const r = 0.8 + d; c.fillRect(px, py, r, r); } }
+    for (let i = 0, nS = Q.lvl >= 1 ? 90 : 35; i < nS; i++) { const d = 0.4 + hash(i + 7) * 0.8, px = ((hash(i) * 2000 - w.cam.x * s * d + Math.sin(t * 0.5 + i) * 10) % VW + VW) % VW, py = ((hash(i + 40) * 2000 - w.cam.y * s * d + t * 10 * d) % VH + VH) % VH; if (py > surf) { const r = 1 + d * 1.3; c.fillRect(px, py, r, r); } }
   }
+  drawMidwater(c, surf, t, z);
   // ---- world space ----
   worldXform(c);
   const vw = viewW(), x0 = w.cam.x - vw / 2 - 60, x1 = w.cam.x + vw / 2 + 60, y0 = w.cam.y - viewH() / 2 - 60, y1 = w.cam.y + viewH() / 2 + 60;
@@ -2463,14 +2464,41 @@ function drawSky(c, surf, s, t, z) {
     c.fillStyle = '#f2fbff'; c.beginPath(); c.moveTo(cx - 140 * s, cy); c.lineTo(cx - 60 * s, cy - 90 * s); c.lineTo(cx, cy - 60 * s); c.lineTo(cx + 50 * s, cy - 120 * s); c.lineTo(cx + 150 * s, cy); c.fill();
     c.fillStyle = '#b8e0f4'; c.beginPath(); c.moveTo(cx + 50 * s, cy - 120 * s); c.lineTo(cx + 150 * s, cy); c.lineTo(cx + 40 * s, cy); c.lineTo(cx + 20 * s, cy - 60 * s); c.fill(); } }
 }
+// mid-water depth cues: distant fish-school & whale silhouettes, drifting bokeh, soft edge falloff (screen space, cheap)
+function drawMidwater(c, surf, t, z) {
+  const s = w.cam.s, dk = z.dark || 0;
+  {
+    const col = dk > 0.3 ? 'rgba(4,10,30,' : 'rgba(10,50,90,';
+    // schools: 4 drifting clusters at parallax 0.12
+    for (let k = 0; k < 4; k++) {
+      const span = VW + 600, bx = ((k * 517 + 300 * hash(k + 11) - w.cam.x * s * 0.12 + t * (12 + k * 4)) % span + span) % span - 300;
+      const by = ((k * 331 + 400 * hash(k + 5) - w.cam.y * s * 0.12) % (VH + 300) + VH + 300) % (VH + 300) - 150;
+      if (by < surf + 40) continue;
+      c.fillStyle = col + (0.16 + 0.05 * (k % 2)) + ')';
+      for (let i = 0; i < 16; i++) { const a = i * 2.39996, rr = 8 + 5 * Math.sqrt(i) * 3.2, fx = bx + Math.cos(a) * rr * 1.6 + Math.sin(t * 1.3 + i) * 3, fy = by + Math.sin(a) * rr * 0.6 + Math.cos(t * 1.1 + i) * 2, fl = 7 + hash(i + k * 20) * 5;
+        c.beginPath(); c.ellipse(fx, fy, fl, fl * 0.38, 0, 0, TAU); c.fill(); c.beginPath(); c.moveTo(fx - fl * 0.8, fy); c.lineTo(fx - fl * 1.5, fy - fl * 0.45); c.lineTo(fx - fl * 1.5, fy + fl * 0.45); c.fill(); }
+    }
+    // a big slow whale silhouette far behind
+    { const span = VW + 1400, wx = ((900 - w.cam.x * s * 0.06 + t * 9) % span + span) % span - 700, wy = Math.max(surf + 140, VH * 0.42 - w.cam.y * s * 0.05), L = Math.min(VW, VH) * 0.55;
+      c.fillStyle = col + (dk > 0.3 ? 0.35 : 0.11) + ')'; c.beginPath(); c.moveTo(wx + L * 0.5, wy); c.quadraticCurveTo(wx + L * 0.3, wy - L * 0.16, wx - L * 0.2, wy - L * 0.08); c.quadraticCurveTo(wx - L * 0.42, wy - L * 0.04, wx - L * 0.55, wy - L * (0.12 + 0.03 * Math.sin(t))); c.lineTo(wx - L * 0.5, wy); c.lineTo(wx - L * 0.56, wy + L * (0.1 - 0.03 * Math.sin(t))); c.quadraticCurveTo(wx - L * 0.3, wy + L * 0.08, wx + L * 0.1, wy + L * 0.09); c.quadraticCurveTo(wx + L * 0.4, wy + L * 0.08, wx + L * 0.5, wy); c.fill();
+      c.beginPath(); c.ellipse(wx + L * 0.1, wy + L * 0.08, L * 0.12, L * 0.025, 0.5, 0, TAU); c.fill(); }
+  }
+  // drifting bokeh motes
+  if (Q.lvl >= 2) { const img = bokehSprite(); c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 14; i++) { const d = 0.6 + hash(i + 90) * 0.9, px = ((hash(i + 60) * 3000 - w.cam.x * s * d + Math.sin(t * 0.3 + i) * 20) % (VW + 80) + VW + 80) % (VW + 80) - 40, py = ((hash(i + 70) * 3000 - w.cam.y * s * d - t * 6 * d) % (VH + 80) + VH + 80) % (VH + 80) - 40;
+      if (py < surf) continue; const r = (6 + 16 * hash(i + 80)) * d; c.globalAlpha = (dk > 0.3 ? 0.10 : 0.16) * (0.6 + 0.4 * Math.sin(t + i)); c.drawImage(img, px - r, py - r, r * 2, r * 2); }
+    c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
+  // soft edge falloff for depth
+  const vg = c.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.4, VW / 2, VH / 2, Math.max(VW, VH) * 0.75); vg.addColorStop(0, 'rgba(0,10,30,0)'); vg.addColorStop(1, 'rgba(0,10,30,' + (0.22 + dk * 0.2) + ')'); c.fillStyle = vg; c.fillRect(0, Math.max(0, surf), VW, VH);
+}
 function drawRays(c, surf, t, z) {
-  if (Q.lvl < 1 || z.rays <= 0 || surf < -VH * 1.4) return;
-  const img = raySprite(), s = w.cam.s, depthF = clamp(1 - w.cam.y / (w.H * 0.95), 0.15, 1), n = Q.lvl >= 2 ? 8 : 5, span = VW + 700;
+  if (z.rays <= 0 || surf < -VH * 1.4) return;
+  const img = raySprite(), s = w.cam.s, depthF = clamp(1 - w.cam.y / (w.H * 0.95), 0.15, 1), n = Q.lvl >= 2 ? 8 : Q.lvl === 1 ? 5 : 3, span = VW + 700;
   c.globalCompositeOperation = 'lighter';
   for (let i = 0; i < n; i++) {
     const bx = ((i * span / n + 160 * hash(i) - w.cam.x * s * 0.35 + Math.sin(t * 0.25 + i * 2) * 50) % span + span) % span - 350;
     const wd = (90 + 130 * hash(i + 7)) * s * 1.3, len = (720 + 520 * hash(i + 3)) * s, sk = (0.32 + 0.08 * Math.sin(t * 0.2 + i)) * len;
-    c.globalAlpha = clamp((0.2 + 0.12 * Math.sin(t * 0.6 + i * 1.9)) * z.rays * depthF, 0, 1);
+    c.globalAlpha = clamp((0.3 + 0.14 * Math.sin(t * 0.6 + i * 1.9)) * z.rays * depthF, 0, 1);
     c.setTransform(DPR * wd / 128, 0, DPR * sk / 512, DPR * len / 512, DPR * bx, DPR * surf); c.drawImage(img, 0, 0);
   }
   c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.setTransform(DPR, 0, 0, DPR, 0, 0);
