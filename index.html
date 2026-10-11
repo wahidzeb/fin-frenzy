@@ -274,6 +274,15 @@ body:not(.ads-on) .adslot{display:none!important}
 <div id="toast"></div>
 <div id="rotHint" class="hidden">↻ Landscape recommended</div>
 <script>
+/* GA4 custom events (Games by Zaib). Safe: never throws, light (no per-frame calls, dedupe + per-page cap). */
+var ZT_N = 0, ZT_K = '', ZT_KT = 0, ZT_T = 0, ZT_S = 0, ZT_H = 0;
+function zt(n, p) { try { var k = n + JSON.stringify(p || 0), t = Date.now(); if (ZT_N > 150 || (k === ZT_K && t - ZT_KT < 500)) return; ZT_N++; ZT_K = k; ZT_KT = t; window.gtag && gtag('event', n, Object.assign({ game_id: 'fin-frenzy' }, p)); } catch (e) {} }
+function ztPlay(on) { try { var t = Date.now(); if (ZT_S) { ZT_T += (t - ZT_S) / 1e3; ZT_S = 0; } if (on) ZT_S = t; } catch (e) {} }
+function ztPing(r) { try { ztPlay(false); if (ZT_T >= 1) zt('play_time', { play_time: Math.round(ZT_T), reason: r }); ZT_T = 0; } catch (e) {} }
+try {
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { ZT_H = !!ZT_S; ztPing('page_hide'); } else if (ZT_H) { ZT_H = 0; ztPlay(true); } });
+  document.addEventListener('click', function (e) { try { var a = e.target && e.target.closest && e.target.closest('a[href]'); if (!a) return; var u = new URL(a.href, location.href); if (!/^https?:$/.test(u.protocol)) return; if (u.host === location.host || /(^|\.)zaibgames\.com$/.test(u.host)) { if (u.pathname.indexOf('/fin-frenzy/') !== 0) zt('more_games_click', { link_url: u.href }); } else zt('outbound_click', { link_url: u.href, link_domain: u.host, outbound: true }); } catch (err) {} }, true);
+} catch (e) {}
 'use strict';
 // ================= core utils =================
 const TAU = Math.PI * 2;
@@ -3116,7 +3125,7 @@ function missionEvent(k, n, best) {
     const tpl = MISSIONS.find(t => t.k === k);
     if (tpl.best) { if (!best) continue; m.p = Math.max(m.p, n); } else m.p += n;
     if (m.p >= m.n) {
-      save.coins += m.r; save.mdone = (save.mdone || 0) + 1; if (save.mdone % 3 === 0) save.mtier = (save.mtier || 0) + 1;
+      save.coins += m.r; zt('unlock_achievement', { achievement_id: 'mission_' + m.k }); zt('earn_virtual_currency', { virtual_currency_name: 'coins', value: m.r, item_name: 'mission_' + m.k }); save.mdone = (save.mdone || 0) + 1; if (save.mdone % 3 === 0) save.mtier = (save.mtier || 0) + 1;
       toast(`🎯 Mission complete: ${missionText(m)}  +${m.r}`); SFX.power();
       save.missions[i] = makeMission(save.missions.map(x => x.k));
     }
@@ -3227,12 +3236,12 @@ function renderDetail() {
   D.innerHTML = h;
   requestAnimationFrame(() => { const c = $('detCv'); if (!c) return; if (shopTab === 'sharks') sharkPreview(c, shopSel, true); else iconPreview(c, shopSel); });
   const bind = (id, fn) => { const b = $(id); if (b) b.addEventListener('click', () => { if (b.disabled) return; fn(); }); };
-  bind('dBuy', () => { const s = SHARKS.find(x => x.id === shopSel); if (save.coins < s.cost) return; save.coins -= s.cost; save.sharks[s.id] = 1; save.sel = s.id; writeSave(); SFX.power(); toast(`🦈 ${s.name} unlocked!`); renderShop(); refreshCoins(); });
+  bind('dBuy', () => { const s = SHARKS.find(x => x.id === shopSel); if (save.coins < s.cost) return; save.coins -= s.cost; save.sharks[s.id] = 1; zt('spend_virtual_currency', { virtual_currency_name: 'coins', value: s.cost, item_name: s.name }); save.sel = s.id; writeSave(); SFX.power(); toast(`🦈 ${s.name} unlocked!`); renderShop(); refreshCoins(); });
   bind('dSel', () => { save.sel = shopSel; writeSave(); SFX.click(); renderShop(); });
   bind('dUp', () => {
-    if (shopTab === 'sharks') { const s = SHARKS.find(x => x.id === shopSel), lv = save.sharks[s.id], c = sharkUpCost(s, lv); if (save.coins < c || lv >= 5) return; save.coins -= c; save.sharks[s.id] = lv + 1; toast(`${s.name} is now level ${lv + 1}!`); }
-    else if (shopTab === 'gear') { const g = GEAR.find(x => x.id === shopSel), lv = save.gear[g.id]; if (lv >= 5 || save.coins < g.costs[lv]) return; save.coins -= g.costs[lv]; save.gear[g.id] = lv + 1; toast(`${g.name} level ${lv + 1}!`); }
-    else { const e = EXTRAS.find(x => x.id === shopSel); if (save.coins < e.cost || (save[e.id] || 0) >= e.max) return; save.coins -= e.cost; save[e.id] = (save[e.id] || 0) + 1; toast(`Bought ${e.name}!`); }
+    if (shopTab === 'sharks') { const s = SHARKS.find(x => x.id === shopSel), lv = save.sharks[s.id], c = sharkUpCost(s, lv); if (save.coins < c || lv >= 5) return; save.coins -= c; save.sharks[s.id] = lv + 1; zt('spend_virtual_currency', { virtual_currency_name: 'coins', value: c, item_name: s.name + ' ' + (lv + 1) }); toast(`${s.name} is now level ${lv + 1}!`); }
+    else if (shopTab === 'gear') { const g = GEAR.find(x => x.id === shopSel), lv = save.gear[g.id]; if (lv >= 5 || save.coins < g.costs[lv]) return; zt('spend_virtual_currency', { virtual_currency_name: 'coins', value: g.costs[lv], item_name: g.name + ' ' + (lv + 1) }); save.coins -= g.costs[lv]; save.gear[g.id] = lv + 1; toast(`${g.name} level ${lv + 1}!`); }
+    else { const e = EXTRAS.find(x => x.id === shopSel); if (save.coins < e.cost || (save[e.id] || 0) >= e.max) return; save.coins -= e.cost; save[e.id] = (save[e.id] || 0) + 1; zt('spend_virtual_currency', { virtual_currency_name: 'coins', value: e.cost, item_name: e.name }); toast(`Bought ${e.name}!`); }
     writeSave(); SFX.power(); renderShop(); refreshCoins();
   });
 }
@@ -3244,8 +3253,8 @@ function renderSettings() {
   $('bReset').textContent = 'Reset progress'; resetArm = 0;
 }
 let resetArm = 0;
-document.querySelectorAll('#scrSettings .tog').forEach(t => t.addEventListener('click', () => { const k = t.dataset.k; save.settings[k] = !save.settings[k]; writeSave(); ensureAudio(); applyVolumes(); layoutControls(); SFX.click(); if (k === 'vibe' && save.settings.vibe) vibrate(40); renderSettings(); }));
-document.querySelectorAll('#scrSettings .seg button').forEach(b => b.addEventListener('click', () => { const k = b.parentElement.dataset.k; save.settings[k] = b.dataset.v; writeSave(); tapSfx(); if (k === 'gfx') { Q.auto = b.dataset.v === 'auto'; Q.lvl = b.dataset.v === 'low' ? 0 : 2; Q.slow = 0; resize(); } renderSettings(); }));
+document.querySelectorAll('#scrSettings .tog').forEach(t => t.addEventListener('click', () => { const k = t.dataset.k; save.settings[k] = !save.settings[k]; zt('settings_change', { setting: k, value: String(save.settings[k]) }); writeSave(); ensureAudio(); applyVolumes(); layoutControls(); SFX.click(); if (k === 'vibe' && save.settings.vibe) vibrate(40); renderSettings(); }));
+document.querySelectorAll('#scrSettings .seg button').forEach(b => b.addEventListener('click', () => { const k = b.parentElement.dataset.k; save.settings[k] = b.dataset.v; zt('settings_change', { setting: k, value: String(b.dataset.v) }); writeSave(); tapSfx(); if (k === 'gfx') { Q.auto = b.dataset.v === 'auto'; Q.lvl = b.dataset.v === 'low' ? 0 : 2; Q.slow = 0; resize(); } renderSettings(); }));
 on('bReset', () => {
   if (!resetArm) { resetArm = 1; $('bReset').textContent = 'Tap again to confirm'; setTimeout(() => { if (resetArm) { resetArm = 0; $('bReset').textContent = 'Reset progress'; } }, 3000); return; }
   const st = save.settings; save = DEF_SAVE(); save.settings = st; save.seenHelp = true; writeSave(); toast('Progress reset'); renderSettings(); refreshCoins();
@@ -3285,6 +3294,12 @@ function finishRun(win) {
   if (w.mode === 'endless') { r.reward = Math.floor(w.score / 250); if (w.score > (save.zoneBest[w.zi] || 0)) { save.zoneBest[w.zi] = w.score; r.newBest = true; } }
   if (w.score > save.best) { save.best = w.score; if (w.mode !== 'endless') r.newBest = true; }
   save.coins += r.coins + r.reward;
+  { const zl = w.mode === 'level' ? (w.zi + 1) + '-' + (w.li + 1) : 'zone' + (w.zi + 1);
+    if (w.mode === 'level') zt('level_end', { level: zl, success: !!win, score: w.score });
+    if (!win) zt('game_over', { score: w.score, level: zl, mode: w.mode });
+    if (r.newBest) zt('post_score', { score: w.score, level: zl, mode: w.mode });
+    if (r.coins + r.reward > 0) zt('earn_virtual_currency', { virtual_currency_name: 'coins', value: r.coins + r.reward, item_name: w.mode + '_run' });
+    ztPing(win ? 'level_clear' : 'game_over'); }
   stat('runs'); stat('fish', w.eaten);
   writeSave();
   lastRun = r;
@@ -3380,6 +3395,7 @@ function startRun(zi, mode, li) {
   setSong('play', zi); applyVolumes();
   layoutControls();
   writeSave();
+  { const zl = mode === 'level' ? (zi + 1) + '-' + ((li || 0) + 1) : 'zone' + (zi + 1); zt('game_start', { mode: mode, level: zl }); if (mode === 'level') zt('level_start', { level: zl }); ztPlay(true); }
 }
 function pauseGame() {
   if (G.state !== 'play') return;
