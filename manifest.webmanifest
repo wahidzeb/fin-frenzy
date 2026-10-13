@@ -1,0 +1,42 @@
+{
+  "id": "/fin-frenzy/",
+  "name": "Fin Frenzy",
+  "short_name": "Fin Frenzy",
+  "description": "Fin Frenzy by Zaib - be a hungry cartoon shark! Eat fish to grow, dodge mines, jellyfish and harpoons, beat giant bosses across five ocean zones, unlock sharks and gadgets.",
+  "lang": "en",
+  "start_url": "/fin-frenzy/?source=pwa",
+  "scope": "/fin-frenzy/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#063a66",
+  "background_color": "#063a66",
+  "categories": [
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "/fin-frenzy/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fin-frenzy/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fin-frenzy/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/fin-frenzy/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
